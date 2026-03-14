@@ -1899,7 +1899,7 @@ void CWindow::mapWindow() {
             m_workspace = pWorkspace;
             m_monitor   = pWorkspace->m_monitor;
 
-            if (m_monitor.lock()->m_activeSpecialWorkspace && !pWorkspace->m_isSpecialWorkspace)
+            if (const auto PMONITORFROMWORKSPACE = m_monitor.lock(); PMONITORFROMWORKSPACE && PMONITORFROMWORKSPACE->m_activeSpecialWorkspace && !pWorkspace->m_isSpecialWorkspace)
                 workspaceSilent = true;
 
             if (!workspaceSilent) {

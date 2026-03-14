@@ -132,7 +132,11 @@ bool CExtWorkspaceResource::isActive() const {
     if (!m_workspace)
         return false;
 
-    auto const& monitor      = m_workspace->m_monitor;
+    const auto monitor = m_workspace->m_monitor.lock();
+
+    if (!monitor)
+        return false;
+
     auto const& cmpWorkspace = m_workspace->m_isSpecialWorkspace ? monitor->m_activeSpecialWorkspace : monitor->m_activeWorkspace;
     return m_workspace == cmpWorkspace;
 }
@@ -176,7 +180,10 @@ void CExtWorkspaceResource::sendGroup() {
         m_group->workspaceLeave(m_resource);
 
     if (m_manager) {
-        m_group = m_manager->findGroup(m_workspace->m_monitor);
+        if (m_workspace)
+            m_group = m_manager->findGroup(m_workspace->m_monitor);
+        else
+            m_group.reset();
 
         if (m_group)
             m_group->workspaceEnter(m_resource);
@@ -188,14 +195,16 @@ void CExtWorkspaceResource::sendGroup() {
 void CExtWorkspaceResource::commit() {
     // order is important
 
-    if (m_pendingState.deactivate && isActive() && m_workspace->m_isSpecialWorkspace)
-        m_workspace->m_monitor->setSpecialWorkspace(nullptr);
+    const auto PMONITOR = m_workspace ? m_workspace->m_monitor.lock() : nullptr;
+
+    if (m_pendingState.deactivate && isActive() && m_workspace->m_isSpecialWorkspace && PMONITOR)
+        PMONITOR->setSpecialWorkspace(nullptr);
 
     if (m_pendingState.targetMonitor && m_workspace && m_workspace->m_monitor != m_pendingState.targetMonitor)
         g_pCompositor->moveWorkspaceToMonitor(m_workspace.lock(), m_pendingState.targetMonitor.lock(), true);
 
-    if (m_pendingState.activate && !isActive() && m_workspace)
-        m_workspace->m_monitor->changeWorkspace(m_workspace.lock());
+    if (m_pendingState.activate && !isActive() && m_workspace && PMONITOR)
+        PMONITOR->changeWorkspace(m_workspace.lock());
 
     m_pendingState.activate   = false;
     m_pendingState.deactivate = false;

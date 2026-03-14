@@ -235,6 +235,9 @@ void CDesktopAnimationManager::startAnimation(PHLLS ls, eAnimationType type, boo
 void CDesktopAnimationManager::startAnimation(PHLWORKSPACE ws, eAnimationType type, bool left, bool instant) {
     const bool IN = type == ANIMATION_TYPE_IN;
 
+    if (!ws)
+        return;
+
     if (!instant) {
         const std::string ANIMNAME = std::format("{}{}", ws->m_isSpecialWorkspace ? "specialWorkspace" : "workspaces", IN ? "In" : "Out");
 
@@ -243,6 +246,10 @@ void CDesktopAnimationManager::startAnimation(PHLWORKSPACE ws, eAnimationType ty
     }
     static auto PWORKSPACEGAP = CConfigValue<Hyprlang::INT>("general:gaps_workspaces");
     const auto  PMONITOR      = ws->m_monitor.lock();
+
+    if (!PMONITOR)
+        return;
+
     const auto  ANIMSTYLE     = ws->m_alpha->getStyle();
     float       movePerc      = 100.f;
     // inverted for some reason. TODO: fix the cause
@@ -478,6 +485,9 @@ void CDesktopAnimationManager::setFullscreenFadeAnimation(PHLWORKSPACE ws, eAnim
 
     const auto PMONITOR = ws->m_monitor.lock();
 
+    if (!PMONITOR)
+        return;
+
     if (ws->m_id == PMONITOR->activeWorkspaceID() || ws->m_id == PMONITOR->activeSpecialWorkspaceID()) {
         for (auto const& ls : PMONITOR->m_layerSurfaceLayers[ZWLR_LAYER_SHELL_V1_LAYER_TOP]) {
             if (!ls->m_fadingOut && !ls->m_aboveFullscreen)
@@ -494,6 +504,9 @@ void CDesktopAnimationManager::setFullscreenFloatingFade(PHLWINDOW pWindow, floa
 }
 
 void CDesktopAnimationManager::overrideFullscreenFadeAmount(PHLWORKSPACE ws, float fade, PHLWINDOW exclude) {
+    if (!ws)
+        return;
+
     for (auto const& w : g_pCompositor->m_windows) {
         if (w == exclude)
             continue;
@@ -507,6 +520,9 @@ void CDesktopAnimationManager::overrideFullscreenFadeAmount(PHLWORKSPACE ws, flo
     }
 
     const auto PMONITOR = ws->m_monitor.lock();
+
+    if (!PMONITOR)
+        return;
 
     if (ws->m_id == PMONITOR->activeWorkspaceID() || ws->m_id == PMONITOR->activeSpecialWorkspaceID()) {
         for (auto const& ls : PMONITOR->m_layerSurfaceLayers[ZWLR_LAYER_SHELL_V1_LAYER_TOP]) {
