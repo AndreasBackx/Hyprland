@@ -399,8 +399,14 @@ bool CWorkspace::isVisible() {
 
 bool CWorkspace::isVisibleNotCovered() {
     const auto PMONITOR = m_monitor.lock();
+    if (!PMONITOR)
+        return false;
+
     if (PMONITOR->m_activeSpecialWorkspace)
         return PMONITOR->m_activeSpecialWorkspace->m_id == m_id;
+
+    if (!PMONITOR->m_activeWorkspace)
+        return false;
 
     return PMONITOR->m_activeWorkspace->m_id == m_id;
 }
@@ -456,6 +462,9 @@ PHLWINDOW CWorkspace::getFirstWindow() {
 
 PHLWINDOW CWorkspace::getTopLeftWindow() {
     const auto PMONITOR = m_monitor.lock();
+
+    if (!PMONITOR)
+        return nullptr;
 
     for (auto const& w : g_pCompositor->m_windows) {
         if (w->m_workspace != m_self || !w->m_isMapped || w->isHidden())

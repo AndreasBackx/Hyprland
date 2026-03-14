@@ -226,12 +226,14 @@ void CLayerSurface::onMap() {
 void CLayerSurface::onUnmap() {
     Log::logger->log(Log::DEBUG, "LayerSurface {:x} unmapped", rc<uintptr_t>(m_layerSurface.get()));
 
+    const auto PMONITOR = m_monitor.lock();
+
     g_pEventManager->postEvent(SHyprIPCEvent{.event = "closelayer", .data = m_layerSurface->m_layerNamespace});
     Event::bus()->m_events.layer.closed.emit(m_self.lock());
 
     std::erase_if(g_pInputManager->m_exclusiveLSes, [this](const auto& other) { return !other || other == m_self; });
 
-    if (!m_monitor || g_pCompositor->m_unsafeState) {
+    if (!PMONITOR || g_pCompositor->m_unsafeState) {
         Log::logger->log(Log::WARN, "Layersurface unmapping on invalid monitor (removed?) ignoring.");
 
         g_pCompositor->addToFadingOutSafe(m_self.lock());
@@ -261,12 +263,7 @@ void CLayerSurface::onUnmap() {
 
     g_pCompositor->addToFadingOutSafe(m_self.lock());
 
-    const auto PMONITOR = m_monitor.lock();
-
     const bool WASLASTFOCUS = g_pSeatManager->m_state.keyboardFocus == m_wlSurface->resource() || g_pSeatManager->m_state.pointerFocus == m_wlSurface->resource();
-
-    if (!PMONITOR)
-        return;
 
     // refocus if needed
     //                                vvvvvvvvvvvvv if there is a last focus and the last focus is not keyboard focusable, fallback to window
